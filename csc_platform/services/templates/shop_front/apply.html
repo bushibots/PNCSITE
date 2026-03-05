@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Apply for {{ service.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans p-6">
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+        <h2 class="text-2xl font-bold border-b pb-2 mb-6">Apply for {{ service.name }}</h2>
+        <p class="text-gray-600 mb-6">Price: <strong>₹{{ service.price }}</strong> | Estimated time: <strong>{{ service.estimated_days }} days</strong></p>
+        
+        <form method="POST" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %} <div>
+                <label class="block font-bold text-sm mb-1">Full Name</label>
+                <input type="text" name="name" required class="w-full border p-2 rounded focus:outline-blue-500">
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Phone Number (WhatsApp preferred)</label>
+                <input type="tel" name="phone" required class="w-full border p-2 rounded focus:outline-blue-500">
+            </div>
+
+            <div>
+                <label class="block font-bold text-sm mb-1">Upload Documents (Aadhaar, Photo, etc.)</label>
+                <input type="file" name="documents" multiple required class="w-full border p-2 rounded bg-gray-50">
+                <p class="text-xs text-gray-500 mt-1">You can select multiple files at once by holding Ctrl (Windows) or Cmd (Mac).</p>
+            </div>
+
+            <div class="pt-4 flex gap-4">
+                <a href="{% url 'shop_home' shop.slug %}" class="w-1/3 text-center bg-gray-300 text-gray-700 font-bold py-2 rounded hover:bg-gray-400">Cancel</a>
+                <button type="submit" class="w-2/3 bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700">Submit Application</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

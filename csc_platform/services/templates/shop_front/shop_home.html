@@ -29,9 +29,9 @@
                     <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded font-semibold">{{ service.estimated_days }} day(s)</span>
                 </div>
                 
-                <button class="mt-4 w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition">
-                    Apply Now
-                </button>
+                <a href="{% url 'service_apply' shop.slug service.id %}" class="mt-4 block text-center w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition">
+                 Apply Now
+                </a>
             </div>
             {% empty %}
             <p class="text-gray-500 col-span-2 text-center py-8">No services have been added yet.</p>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Application Received</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans p-6">
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10 text-center border-t-8 border-green-500">
+        <h2 class="text-3xl font-bold text-green-600 mb-4">Application Successful!</h2>
+        <p class="text-gray-600 mb-6">We have received your application for <strong>{{ service_request.service.name }}</strong>.</p>
+        
+        <div class="bg-gray-100 p-6 rounded-lg mb-6">
+            <p class="text-sm text-gray-500 uppercase tracking-wide">Your Tracking ID</p>
+            <p class="text-4xl font-mono font-bold tracking-widest text-gray-800 mt-2">{{ service_request.tracking_id }}</p>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-8">Please save this Tracking ID. You can use it to check the status of your document processing.</p>
+        
+        <a href="{% url 'shop_home' shop.slug %}" class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700">Return to Shop</a>
+    </div>
+</body>
+</html>
