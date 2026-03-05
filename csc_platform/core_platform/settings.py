@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "unfold",  # <--- MUST BE AT THE VERY TOP!
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -116,5 +117,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+import os # Add this at the top of the file if it's not there!
+
+# Tells Django where to save uploaded files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# The base URL used to serve the files
+MEDIA_URL = '/media/'
 
 AUTH_USER_MODEL = 'services.User'

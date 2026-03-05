@@ -49,3 +49,28 @@ def request_success(request, shop_slug, tracking_id):
     shop = get_object_or_404(Shop, slug=shop_slug)
     service_request = get_object_or_404(ServiceRequest, tracking_id=tracking_id, shop=shop)
     return render(request, 'shop_front/success.html', {'shop': shop, 'service_request': service_request})
+
+def track_status(request, shop_slug):
+    shop = get_object_or_404(Shop, slug=shop_slug)
+    service_request = None
+    error_message = None
+
+    if request.method == 'POST':
+        tracking_id = request.POST.get('tracking_id')
+        phone = request.POST.get('phone')
+        
+        try:
+            # We check both ID and Phone to make sure the right person is looking it up
+            service_request = ServiceRequest.objects.get(
+                tracking_id=tracking_id, 
+                customer__phone_number=phone,
+                shop=shop
+            )
+        except ServiceRequest.DoesNotExist:
+            error_message = "No request found with those details. Please check and try again."
+
+    return render(request, 'shop_front/track.html', {
+        'shop': shop, 
+        'service_request': service_request,
+        'error_message': error_message
+    })

@@ -3,6 +3,10 @@ import random
 import string
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 
 # ---------------------------------------------------------
 # HELPER FUNCTIONS
@@ -115,3 +119,26 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.date} at {self.time_slot} - {self.request.customer.name}"
+    
+    # ---------------------------------------------------------
+# AUTOMATION: The Magic Permission Granter
+# ---------------------------------------------------------
+@receiver(post_save, sender=User)
+def auto_grant_shop_owner_permissions(sender, instance, created, **kwargs):
+    """
+    If a user is saved with 'is_shop_owner=True', automatically give them
+    all the permissions they need so the platform admin doesn't have to.
+    """
+    if instance.is_shop_owner and instance.is_staff:
+        # 1. Define which tables they are allowed to manage
+        models_to_grant = [Shop, Service, Customer, ServiceRequest, UploadedDocument, Appointment]
+        
+        # 2. Gather all permissions for those tables
+        permissions_to_add = []
+        for model in models_to_grant:
+            content_type = ContentType.objects.get_for_model(model)
+            permissions = Permission.objects.filter(content_type=content_type)
+            permissions_to_add.extend(permissions)
+        
+        # 3. Add them to the user instantly behind the scenes
+        instance.user_permissions.add(*permissions_to_add)

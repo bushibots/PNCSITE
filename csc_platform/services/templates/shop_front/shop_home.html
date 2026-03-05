@@ -13,6 +13,11 @@
         {% if shop.tagline %}
             <p class="mt-2 text-blue-100 text-lg">{{ shop.tagline }}</p>
         {% endif %}
+        <div class="mt-4">
+    <a href="{% url 'track_status' shop.slug %}" class="bg-white text-blue-600 px-4 py-2 rounded-full font-bold text-sm shadow hover:bg-blue-50">
+        Track My Application
+    </a>
+</div>
     </header>
 
     <main class="max-w-4xl mx-auto p-6 mt-6">

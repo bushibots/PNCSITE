@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Track Your Request - {{ shop.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans p-6">
+    <div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+        <h2 class="text-2xl font-bold mb-6 text-center">Track Application Status</h2>
+        
+        <form method="POST" class="space-y-4 mb-8">
+            {% csrf_token %}
+            <div>
+                <label class="block font-bold text-sm mb-1">Tracking ID</label>
+                <input type="text" name="tracking_id" placeholder="e.g. A1B2C3D4" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block font-bold text-sm mb-1">Registered Phone Number</label>
+                <input type="tel" name="phone" required class="w-full border p-2 rounded">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700">Check Status</button>
+        </form>
+
+        {% if error_message %}
+            <div class="bg-red-100 text-red-700 p-3 rounded mb-6 text-sm">{{ error_message }}</div>
+        {% endif %}
+
+        {% if service_request %}
+            <div class="border-t pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-lg">{{ service_request.service.name }}</h3>
+                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">{{ service_request.get_status_display }}</span>
+                </div>
+                
+                <div class="relative flex items-center justify-between mt-8">
+                    <div class="absolute w-full h-1 bg-gray-200"></div>
+                    <div class="z-10 w-4 h-4 rounded-full {% if service_request.status == 'PENDING' or service_request.status != 'PENDING' %}bg-blue-600{% else %}bg-gray-300{% endif %}"></div>
+                    <div class="z-10 w-4 h-4 rounded-full {% if service_request.status == 'PROCESSING' or service_request.status == 'COMPLETED' or service_request.status == 'READY' %}bg-blue-600{% else %}bg-gray-300{% endif %}"></div>
+                    <div class="z-10 w-4 h-4 rounded-full {% if service_request.status == 'READY' %}bg-blue-600{% else %}bg-gray-300{% endif %}"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>Submitted</span>
+                    <span>Processing</span>
+                    <span>Ready</span>
+                </div>
+
+                <div class="mt-6 p-4 bg-gray-50 rounded text-sm text-gray-600">
+                    <p><strong>Customer:</strong> {{ service_request.customer.name }}</p>
+                    <p><strong>Last Updated:</strong> {{ service_request.updated_at|date:"d M Y" }}</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="mt-8 text-center">
+            <a href="{% url 'shop_home' shop.slug %}" class="text-blue-600 hover:underline text-sm">← Back to Shop</a>
+        </div>
+    </div>
+</body>
+</html>
