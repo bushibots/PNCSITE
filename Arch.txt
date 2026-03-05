@@ -1,0 +1,22 @@
+csc_platform/
+│
+├── manage.py
+├── core_platform/          # Global Django settings
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py             # Used by PythonAnywhere
+│
+├── apps/                   # Grouping our modular apps
+│   ├── accounts/           # User models, authentication
+│   ├── tenants/            # Shop models, multi-tenant middleware
+│   ├── services/           # Services, ServiceRequests, Documents
+│   └── appointments/       # Scheduling logic
+│
+├── templates/              # HTML files (Tailwind CSS)
+│   ├── base.html
+│   ├── shop_front/         # What the customer sees
+│   └── dashboard/          # Custom admin templates
+│
+├── static/                 # CSS, Vanilla JS, Shop Logos
+├── media/                  # Secure uploaded documents (ignored in git)
+└── requirements.txt        # Python dependencies
