@@ -3,10 +3,9 @@ from .models import Shop, Service, Customer, ServiceRequest, UploadedDocument, A
 import os
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponseForbidden
-
-# --- NEW IMPORTS FOR THE APPOINTMENT SYSTEM ---
 import json
 from datetime import datetime, timedelta, date
+
 def shop_home(request, shop_slug):
     shop = get_object_or_404(Shop, slug=shop_slug)
     services = Service.objects.filter(shop=shop, is_active=True)
@@ -22,7 +21,6 @@ def service_apply(request, shop_slug, service_id):
         open_time = datetime.strptime(shop.opening_time, fmt)
         close_time = datetime.strptime(shop.closing_time, fmt)
     except ValueError:
-        # Fallback if the shop owner typed the time wrong
         open_time = datetime.strptime("10:00 AM", fmt)
         close_time = datetime.strptime("06:00 PM", fmt)
 
@@ -41,12 +39,13 @@ def service_apply(request, shop_slug, service_id):
         target_date = today + timedelta(days=i)
         date_str = target_date.strftime("%Y-%m-%d")
         
-        # Check database for booked slots on this specific day
+        # Check database for booked slots
         booked = Appointment.objects.filter(shop=shop, date=target_date).values_list('time_slot', flat=True)
         available = [s for s in all_slots if s not in booked]
         availability[date_str] = available
 
-    availability_json = json.dumps(availability)
+    # Fallback to empty schedule if something fails, preventing UI crashes
+    availability_json = json.dumps(availability) if availability else "{}"
     # --------------------------------
 
     if request.method == 'POST':
@@ -87,11 +86,11 @@ def service_apply(request, shop_slug, service_id):
         
         return redirect('request_success', shop_slug=shop.slug, tracking_id=service_request.tracking_id)
 
-    # If it's a GET request, pass the schedule to the HTML
+    # Send the schedule to the UI
     return render(request, 'shop_front/apply.html', {
         'shop': shop, 
         'service': service,
-        'availability_json': availability_json # <-- THIS IS WHAT WAS MISSING!
+        'availability_json': availability_json
     })
 
 def request_success(request, shop_slug, tracking_id):
@@ -109,7 +108,6 @@ def track_status(request, shop_slug):
         phone = request.POST.get('phone')
         
         try:
-            # We check both ID and Phone to make sure the right person is looking it up
             service_request = ServiceRequest.objects.get(
                 tracking_id=tracking_id, 
                 customer__phone_number=phone,
@@ -124,23 +122,16 @@ def track_status(request, shop_slug):
         'error_message': error_message
     })
 
-# ---------------------------------------------------------
-# SECURITY: The Private Document Vault
-# ---------------------------------------------------------
 def secure_document_download(request, document_id):
-    # 1. Bouncer Check 1: Are you even logged in?
     if not request.user.is_authenticated:
         return HttpResponseForbidden("Vault Access Denied: You must be logged in.")
 
     document = get_object_or_404(UploadedDocument, id=document_id)
     shop = document.request.shop
 
-    # 2. Bouncer Check 2: Are you the Admin or the Shop Owner?
-    # Moderators cannot see sensitive customer documents!
     if not (request.user.is_superuser or request.user == shop.owner):
         return HttpResponseForbidden("Vault Access Denied: This document belongs to another shop.")
 
-    # 3. If they pass the checks, securely hand them the file
     file_path = os.path.join(settings.MEDIA_ROOT, document.file.name)
     if os.path.exists(file_path):
         return FileResponse(open(file_path, 'rb'))
