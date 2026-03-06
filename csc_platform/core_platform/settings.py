@@ -46,7 +46,7 @@ INSTALLED_APPS = [
 UNFOLD = {
     "SITE_TITLE": "CSC Command Center",
     "SITE_HEADER": "CSC Admin",
-    "SITE_ICON": "shield",  # Gives a nice security shield icon to the header
+    "SITE_SYMBOL": "shield",  # Gives a nice security shield icon to the header
     
     # 1. Force the Deep Focus Theme (Sleek Indigo)
     "COLORS": {
@@ -67,7 +67,7 @@ UNFOLD = {
     
     # 2. Inject our Flagship Animation Engine
     "STYLES": [
-        lambda request: "/static/css/admin_focus.css",
+        lambda request: f"{STATIC_URL}css/admin_focus.css", # <-- Changed this line!
     ],
 }
 
@@ -145,10 +145,19 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
-import os # Add this at the top of the file if it's not there!
+import os
+
+
+# --- NEW: Tell Django where your root 'static' folder is ---
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+# -----------------------------------------------------------
 
 # Tells Django where to save uploaded files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

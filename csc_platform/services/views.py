@@ -1,9 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Shop, Service, Customer, ServiceRequest, UploadedDocument
+from .models import Shop, Service, Customer, ServiceRequest, UploadedDocument, Appointment
 import os
 from django.conf import settings
 from django.http import FileResponse, Http404, HttpResponseForbidden
 
+# --- NEW IMPORTS FOR THE APPOINTMENT SYSTEM ---
+import json
+from datetime import datetime, timedelta, date
 def shop_home(request, shop_slug):
     shop = get_object_or_404(Shop, slug=shop_slug)
     services = Service.objects.filter(shop=shop, is_active=True)
@@ -13,27 +16,67 @@ def service_apply(request, shop_slug, service_id):
     shop = get_object_or_404(Shop, slug=shop_slug)
     service = get_object_or_404(Service, id=service_id, shop=shop)
 
+    # --- THE SMART SLOT GENERATOR ---
+    fmt = "%I:%M %p"
+    try:
+        open_time = datetime.strptime(shop.opening_time, fmt)
+        close_time = datetime.strptime(shop.closing_time, fmt)
+    except ValueError:
+        # Fallback if the shop owner typed the time wrong
+        open_time = datetime.strptime("10:00 AM", fmt)
+        close_time = datetime.strptime("06:00 PM", fmt)
+
+    all_slots = []
+    current = open_time
+    while current < close_time:
+        next_time = current + timedelta(minutes=30)
+        if next_time > close_time: break
+        all_slots.append(f"{current.strftime(fmt)} - {next_time.strftime(fmt)}")
+        current = next_time
+
+    # Generate availability for the next 7 days
+    today = date.today()
+    availability = {}
+    for i in range(1, 8): # Tomorrow and the next 6 days
+        target_date = today + timedelta(days=i)
+        date_str = target_date.strftime("%Y-%m-%d")
+        
+        # Check database for booked slots on this specific day
+        booked = Appointment.objects.filter(shop=shop, date=target_date).values_list('time_slot', flat=True)
+        available = [s for s in all_slots if s not in booked]
+        availability[date_str] = available
+
+    availability_json = json.dumps(availability)
+    # --------------------------------
+
     if request.method == 'POST':
-        # 1. Get the form data
         name = request.POST.get('name')
         phone = request.POST.get('phone')
+        apt_date = request.POST.get('appointment_date')
+        apt_time = request.POST.get('appointment_time')
         
-        # 2. Find existing customer by phone, or create a new one!
         customer, created = Customer.objects.get_or_create(
             shop=shop, 
             phone_number=phone,
             defaults={'name': name}
         )
 
-        # 3. Create the Service Request
         service_request = ServiceRequest.objects.create(
             shop=shop,
             customer=customer,
             service=service
         )
 
-        # 4. Save uploaded documents securely
-        # getlist allows uploading multiple files at once
+        # --- SAVE THE APPOINTMENT ---
+        if apt_date and apt_time:
+            Appointment.objects.create(
+                shop=shop, 
+                request=service_request, 
+                date=apt_date, 
+                time_slot=apt_time
+            )
+        # ----------------------------
+
         documents = request.FILES.getlist('documents')
         for doc in documents:
             UploadedDocument.objects.create(
@@ -42,11 +85,14 @@ def service_apply(request, shop_slug, service_id):
                 file=doc
             )
         
-        # 5. Redirect to the success page with their tracking ID
         return redirect('request_success', shop_slug=shop.slug, tracking_id=service_request.tracking_id)
 
-    # If it's a GET request, just show the blank form
-    return render(request, 'shop_front/apply.html', {'shop': shop, 'service': service})
+    # If it's a GET request, pass the schedule to the HTML
+    return render(request, 'shop_front/apply.html', {
+        'shop': shop, 
+        'service': service,
+        'availability_json': availability_json # <-- THIS IS WHAT WAS MISSING!
+    })
 
 def request_success(request, shop_slug, tracking_id):
     shop = get_object_or_404(Shop, slug=shop_slug)
