@@ -28,21 +28,26 @@ def document_upload_path(instance, filename):
 
 class User(AbstractUser):
     """
-    Custom user model. Always do this in Django before your first migration.
-    It allows us to easily add roles later (e.g., Staff vs Shop Owner).
+    Custom user model.
     """
     is_shop_owner = models.BooleanField(default=False)
+    is_moderator = models.BooleanField(default=False) # <-- NEW: Moderator Role
     phone_number = models.CharField(max_length=15, blank=True, null=True)
 
 class Shop(models.Model):
     owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='shop')
+    
+    # --- NEW: Moderator Tracking & Security ---
+    onboarded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='onboarded_shops')
+    is_flagged = models.BooleanField(default=False, help_text="Check this to report a suspicious shop to the Admin.")
+    # ----------------------------------------
+    
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, help_text="Used for the URL, e.g., 'print-n-card'")
     tagline = models.CharField(max_length=200, blank=True)
     address = models.TextField()
     phone = models.CharField(max_length=15)
     email = models.EmailField(blank=True)
-    # Simple text fields for MVP. We can make these complex TimeFields later.
     opening_time = models.CharField(max_length=20, default="10:00 AM")
     closing_time = models.CharField(max_length=20, default="06:00 PM")
 
@@ -123,22 +128,31 @@ class Appointment(models.Model):
     # ---------------------------------------------------------
 # AUTOMATION: The Magic Permission Granter
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# AUTOMATION: The Magic Permission Granter
+# ---------------------------------------------------------
 @receiver(post_save, sender=User)
-def auto_grant_shop_owner_permissions(sender, instance, created, **kwargs):
-    """
-    If a user is saved with 'is_shop_owner=True', automatically give them
-    all the permissions they need so the platform admin doesn't have to.
-    """
-    if instance.is_shop_owner and instance.is_staff:
-        # 1. Define which tables they are allowed to manage
+def auto_grant_role_permissions(sender, instance, created, **kwargs):
+    if not instance.is_staff:
+        return # Only staff get dashboard access
+
+    # 1. Give Shop Owners their permissions
+    if instance.is_shop_owner:
         models_to_grant = [Shop, Service, Customer, ServiceRequest, UploadedDocument, Appointment]
-        
-        # 2. Gather all permissions for those tables
         permissions_to_add = []
         for model in models_to_grant:
             content_type = ContentType.objects.get_for_model(model)
             permissions = Permission.objects.filter(content_type=content_type)
             permissions_to_add.extend(permissions)
-        
-        # 3. Add them to the user instantly behind the scenes
+        instance.user_permissions.add(*permissions_to_add)
+
+    # 2. Give Moderators their restricted permissions (NO DELETE POWER)
+    if instance.is_moderator:
+        models_to_grant = [Shop, User] # They only need to manage Shops and create Users
+        permissions_to_add = []
+        for model in models_to_grant:
+            content_type = ContentType.objects.get_for_model(model)
+            # Fetch permissions but EXCLUDE any "delete" permissions
+            permissions = Permission.objects.filter(content_type=content_type).exclude(codename__startswith='delete_')
+            permissions_to_add.extend(permissions)
         instance.user_permissions.add(*permissions_to_add)

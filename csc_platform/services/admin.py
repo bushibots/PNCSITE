@@ -3,22 +3,25 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from unfold.admin import ModelAdmin
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.html import format_html
 from .models import User, Shop, Service, Customer, ServiceRequest, UploadedDocument, Appointment
 
 # ---------------------------------------------------------
 # 1. THE SECURITY GUARD (Multi-Tenant Isolation)
 # ---------------------------------------------------------
 class ShopIsolatedAdmin(ModelAdmin):
-    """
-    Ensures Shop Owners ONLY see their own data.
-    Superusers see everything.
-    """
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
         
-        # Security: Filter by the shop owned by the current user
+        # Security for Moderators: Only see shops they onboarded
+        if getattr(request.user, 'is_moderator', False):
+            if self.model == Shop:
+                return qs.filter(onboarded_by=request.user)
+            return qs.none() # Mods don't need to see individual customer documents
+
+        # Security for Shop Owners
         if hasattr(request.user, 'shop'):
             if self.model == UploadedDocument:
                 return qs.filter(request__shop=request.user.shop)
@@ -29,14 +32,27 @@ class ShopIsolatedAdmin(ModelAdmin):
         return qs.none()
 
     def save_model(self, request, obj, form, change):
-        """Automatically assign the shop to new items if created by an owner"""
+        # Auto-assign the shop to items created by the owner
         if not request.user.is_superuser and hasattr(request.user, 'shop'):
             if hasattr(obj, 'shop'):
                 obj.shop = request.user.shop
+        
+        # Auto-assign the Moderator when they create a shop
+        if getattr(request.user, 'is_moderator', False) and self.model == Shop and not change:
+            obj.onboarded_by = request.user
+            
         super().save_model(request, obj, form, change)
+
+    # SECURE THE DELETE BUTTON
+    def has_delete_permission(self, request, obj=None):
+        if getattr(request.user, 'is_moderator', False):
+            return False # Moderators can NEVER delete. They must Flag.
+        return super().has_delete_permission(request, obj)
 
 # ---------------------------------------------------------
 # 2. BEAUTIFIED USER DASHBOARD
+# ---------------------------------------------------------
+# 2. BEAUTIFIED USER DASHBOARD & UNTOUCHABLE ADMIN
 # ---------------------------------------------------------
 @admin.register(User)
 class UserAdmin(BaseUserAdmin, ModelAdmin):
@@ -44,27 +60,48 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
         ("Account Credentials", {"fields": ("username", "password")}),
         ("Personal Profile", {"fields": ("first_name", "last_name", "email", "phone_number")}),
         ("Permissions & Roles", {
-            "fields": ("is_staff", "is_shop_owner", "is_superuser"),
-            "description": "Enable 'Staff' and 'Shop Owner' to grant dashboard access automatically."
+            "fields": ("is_staff", "is_shop_owner", "is_moderator", "is_superuser"), # ADDED is_moderator
+            "description": "Enable 'Staff' along with a role to grant dashboard access automatically."
         }),
     )
-    list_display = ['username', 'email', 'is_shop_owner', 'is_staff']
-    list_filter = ['is_shop_owner', 'is_staff']
+    list_display = ['username', 'email', 'is_shop_owner', 'is_moderator', 'is_staff']
+    list_filter = ['is_shop_owner', 'is_moderator', 'is_staff']
 
+    # --- THE UNTOUCHABLE ADMIN LOCK ---
+    def has_change_permission(self, request, obj=None):
+        if obj and obj.id == 1 and request.user.id != 1: return False
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.id == 1: return False
+        return super().has_delete_permission(request, obj)
 # ---------------------------------------------------------
 # 3. REGISTERING ALL MODELS (With Flagship UI)
 # ---------------------------------------------------------
 
 @admin.register(Shop)
 class ShopAdmin(ShopIsolatedAdmin):
-    list_display = ['name', 'owner', 'phone', 'opening_time']
+    # Added 'view_storefront' to the end of the list!
+    list_display = ['name', 'owner', 'onboarded_by', 'is_flagged', 'phone', 'view_storefront']
+    list_filter = ['is_flagged', 'onboarded_by']
     search_fields = ['name']
-    # If not admin, they shouldn't be able to change the owner or slug
+    
     def get_readonly_fields(self, request, obj=None):
+        if getattr(request.user, 'is_moderator', False):
+            return ['onboarded_by'] 
         if not request.user.is_superuser:
-            return ['owner', 'slug']
+            return ['owner', 'slug', 'onboarded_by', 'is_flagged']
         return []
 
+    # --- NEW: Clickable Storefront Link ---
+    def view_storefront(self, obj):
+        """Generates a clickable link to the public shop page in the admin table."""
+        if obj.slug:
+            url = reverse('shop_home', args=[obj.slug])
+            # Using Tailwind classes to make it look like a nice blue link!
+            return format_html('<a href="{}" target="_blank" class="text-blue-600 font-bold hover:underline">View Live Shop ↗</a>', url)
+        return "-"
+    view_storefront.short_description = "Public Link" # Sets the column header name
 @admin.register(Service)
 class ServiceAdmin(ShopIsolatedAdmin):
     list_display = ['name', 'shop', 'price', 'is_active']
