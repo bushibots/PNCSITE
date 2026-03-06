@@ -1,53 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ shop.name }} - Digital Services</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800 font-sans">
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen pb-24">
     
-    <header class="bg-blue-600 text-white p-8 shadow-md text-center">
-        <h1 class="text-4xl font-bold">{{ shop.name }}</h1>
-        {% if shop.tagline %}
-            <p class="mt-2 text-blue-100 text-lg">{{ shop.tagline }}</p>
-        {% endif %}
-        <div class="mt-4">
-    <a href="{% url 'track_status' shop.slug %}" class="bg-white text-blue-600 px-4 py-2 rounded-full font-bold text-sm shadow hover:bg-blue-50">
-        Track My Application
-    </a>
-</div>
+    <header class="pt-28 pb-20 px-6 text-center animate-fade-up" style="animation-delay: 100ms;">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel text-sm font-semibold text-indigo-700 mb-6">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Accepting New Applications
+        </div>
+
+        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 drop-shadow-sm">
+            {{ shop.name }}
+        </h1>
+        
+        <p class="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto font-medium mb-10 leading-relaxed">
+            {{ shop.tagline|default:"Secure, fast, and transparent document processing." }}
+        </p>
+
+        <a href="{% url 'track_status' shop.slug %}" 
+           class="inline-flex items-center justify-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-1 transition-all duration-300 group">
+            <span>Track Application Status</span>
+            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        </a>
     </header>
 
-    <main class="max-w-4xl mx-auto p-6 mt-6">
-        <h2 class="text-2xl font-bold mb-6 border-b pb-2">Our Services</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <main class="max-w-6xl mx-auto px-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
             {% for service in services %}
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition">
-                <h3 class="text-xl font-bold text-blue-600">{{ service.name }}</h3>
-                <p class="text-gray-600 mt-2 text-sm">{{ service.description|default:"Contact us for more details about this service." }}</p>
+            <div class="animate-fade-up group" style="animation-delay: {{ forloop.counter0|add:2 }}50ms;">
                 
-                <div class="mt-4 flex justify-between items-center border-t pt-4">
-                    <span class="font-bold text-gray-800 text-lg">₹{{ service.price }}</span>
-                    <span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded font-semibold">{{ service.estimated_days }} day(s)</span>
+                <div class="h-full glass-panel p-8 rounded-3xl hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgb(0,0,0,0.06)] hover:border-indigo-200 transition-all duration-500 flex flex-col relative overflow-hidden">
+                    
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-500">
+                            {{ forloop.counter }}
+                        </div>
+                        <span class="bg-blue-50 text-blue-700 border border-blue-100 text-xs px-3 py-1.5 rounded-full font-bold shadow-sm">
+                            {{ service.estimated_days }} Days
+                        </span>
+                    </div>
+
+                    <h3 class="text-xl font-bold text-slate-900 mb-3">{{ service.name }}</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed mb-8 flex-grow">
+                        {{ service.description|truncatewords:20|default:"Complete your application securely with our streamlined process." }}
+                    </p>
+                    
+                    <div class="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-auto">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Processing Fee</span>
+                            <span class="text-2xl font-extrabold text-slate-900">₹{{ service.price|floatformat:0 }}</span>
+                        </div>
+                        
+                        <a href="{% url 'service_apply' shop.slug service.id %}" 
+                           class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-indigo-600 group-hover:text-white group-hover:shadow-md transition-all duration-300">
+                            <svg class="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+
                 </div>
-                
-                <a href="{% url 'service_apply' shop.slug service.id %}" class="mt-4 block text-center w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition">
-                 Apply Now
-                </a>
             </div>
             {% empty %}
-            <p class="text-gray-500 col-span-2 text-center py-8">No services have been added yet.</p>
+            <div class="col-span-full animate-fade-up" style="animation-delay: 200ms;">
+                <div class="glass-panel p-12 rounded-3xl text-center border-dashed border-2 border-slate-300">
+                    <p class="text-slate-500 font-medium">No services are currently active. Please check back later.</p>
+                </div>
+            </div>
             {% endfor %}
+
         </div>
     </main>
-
-    <footer class="text-center p-8 mt-12 bg-gray-800 text-gray-400 text-sm">
-        <p class="mb-2"><strong>Visit us:</strong> {{ shop.address }}</p>
-        <p><strong>Phone:</strong> {{ shop.phone }} | <strong>Hours:</strong> {{ shop.opening_time }} - {{ shop.closing_time }}</p>
-    </footer>
-
-</body>
-</html>
+</div>
+{% endblock %}

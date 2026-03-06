@@ -8,7 +8,8 @@ urlpatterns = [
     path('shop/<slug:shop_slug>/', views.shop_home, name='shop_home'),
     path('shop/<slug:shop_slug>/apply/<int:service_id>/', views.service_apply, name='service_apply'),
     path('shop/<slug:shop_slug>/success/<str:tracking_id>/', views.request_success, name='request_success'),
-    
-    # New URL for tracking status
     path('shop/<slug:shop_slug>/track/', views.track_status, name='track_status'),
+    
+    # --- NEW: Secure Document Vault URL ---
+    path('secure-download/<int:document_id>/', views.secure_document_download, name='secure_download'),
 ]

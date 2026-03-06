@@ -1,23 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Application Received</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 text-gray-800 font-sans p-6">
-    <div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10 text-center border-t-8 border-green-500">
-        <h2 class="text-3xl font-bold text-green-600 mb-4">Application Successful!</h2>
-        <p class="text-gray-600 mb-6">We have received your application for <strong>{{ service_request.service.name }}</strong>.</p>
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-20 px-4">
+    
+    <div class="glass-panel w-full max-w-lg p-10 md:p-14 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-center animate-fade-up">
         
-        <div class="bg-gray-100 p-6 rounded-lg mb-6">
-            <p class="text-sm text-gray-500 uppercase tracking-wide">Your Tracking ID</p>
-            <p class="text-4xl font-mono font-bold tracking-widest text-gray-800 mt-2">{{ service_request.tracking_id }}</p>
+        <div class="absolute -top-32 -right-32 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-32 -left-32 w-64 h-64 bg-teal-400/20 rounded-full blur-3xl"></div>
+
+        <div class="relative z-10 w-24 h-24 mx-auto bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-8 shadow-inner animate-fade-up" style="animation-delay: 100ms;">
+            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
         </div>
 
-        <p class="text-sm text-gray-500 mb-8">Please save this Tracking ID. You can use it to check the status of your document processing.</p>
+        <h2 class="relative z-10 text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4 animate-fade-up" style="animation-delay: 200ms;">Application Received!</h2>
         
-        <a href="{% url 'shop_home' shop.slug %}" class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700">Return to Shop</a>
+        <p class="relative z-10 text-slate-500 font-medium mb-8 animate-fade-up" style="animation-delay: 300ms;">
+            Your request for <strong class="text-slate-700">{{ service_request.service.name }}</strong> has been securely transmitted.
+        </p>
+
+        <div class="relative z-10 bg-white/60 border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm animate-fade-up" style="animation-delay: 400ms;">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Your Secure Tracking ID</p>
+            <p class="text-4xl md:text-5xl font-mono font-extrabold text-indigo-600 tracking-widest uppercase">{{ service_request.tracking_id }}</p>
+        </div>
+
+        <p class="relative z-10 text-sm text-slate-400 font-medium mb-10 animate-fade-up" style="animation-delay: 500ms;">
+            Please save this ID. You will need it to check your document's processing status.
+        </p>
+        
+        <div class="relative z-10 animate-fade-up" style="animation-delay: 600ms;">
+            <a href="{% url 'shop_home' shop.slug %}" class="inline-flex justify-center items-center w-full bg-slate-900 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-1 transition-all duration-300">
+                Return to Storefront
+            </a>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

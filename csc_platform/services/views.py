@@ -1,5 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Shop, Service, Customer, ServiceRequest, UploadedDocument
+import os
+from django.conf import settings
+from django.http import FileResponse, Http404, HttpResponseForbidden
 
 def shop_home(request, shop_slug):
     shop = get_object_or_404(Shop, slug=shop_slug)
@@ -74,3 +77,26 @@ def track_status(request, shop_slug):
         'service_request': service_request,
         'error_message': error_message
     })
+
+# ---------------------------------------------------------
+# SECURITY: The Private Document Vault
+# ---------------------------------------------------------
+def secure_document_download(request, document_id):
+    # 1. Bouncer Check 1: Are you even logged in?
+    if not request.user.is_authenticated:
+        return HttpResponseForbidden("Vault Access Denied: You must be logged in.")
+
+    document = get_object_or_404(UploadedDocument, id=document_id)
+    shop = document.request.shop
+
+    # 2. Bouncer Check 2: Are you the Admin or the Shop Owner?
+    # Moderators cannot see sensitive customer documents!
+    if not (request.user.is_superuser or request.user == shop.owner):
+        return HttpResponseForbidden("Vault Access Denied: This document belongs to another shop.")
+
+    # 3. If they pass the checks, securely hand them the file
+    file_path = os.path.join(settings.MEDIA_ROOT, document.file.name)
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'))
+    else:
+        raise Http404("Document not found in the vault.")

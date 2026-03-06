@@ -41,6 +41,36 @@ INSTALLED_APPS = [
     'services',  
 ]
 
+# Paste this right below your INSTALLED_APPS in settings.py
+
+UNFOLD = {
+    "SITE_TITLE": "CSC Command Center",
+    "SITE_HEADER": "CSC Admin",
+    "SITE_ICON": "shield",  # Gives a nice security shield icon to the header
+    
+    # 1. Force the Deep Focus Theme (Sleek Indigo)
+    "COLORS": {
+        "primary": {
+            "50": "#eef2ff",
+            "100": "#e0e7ff",
+            "200": "#c7d2fe",
+            "300": "#a5b4fc",
+            "400": "#818cf8",
+            "500": "#6366f1", # The core Indigo
+            "600": "#4f46e5",
+            "700": "#4338ca",
+            "800": "#3730a3",
+            "900": "#312e81",
+            "950": "#1e1b4b",
+        },
+    },
+    
+    # 2. Inject our Flagship Animation Engine
+    "STYLES": [
+        lambda request: "/static/css/admin_focus.css",
+    ],
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -1,0 +1,82 @@
+/* ------------------------------------------------------------------
+   THE FOCUS DASHBOARD ENGINE
+   Combines smooth Bezier curves with deep dark-mode ambient lighting.
+------------------------------------------------------------------- */
+
+:root {
+    --smooth-curve: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 1. Base Entrance Animation (Fades up the entire main content area) */
+@keyframes dashboardReveal {
+    0% { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+main {
+    animation: dashboardReveal 0.8s var(--smooth-curve) forwards;
+}
+
+/* 2. Staggered Table Rows (The Data cascades in smoothly) */
+@keyframes rowCascade {
+    0% { opacity: 0; transform: translateX(-10px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+table tbody tr {
+    opacity: 0; /* Hide initially */
+    animation: rowCascade 0.6s var(--smooth-curve) forwards;
+}
+
+/* Stagger the first 10 rows automatically */
+table tbody tr:nth-child(1) { animation-delay: 50ms; }
+table tbody tr:nth-child(2) { animation-delay: 100ms; }
+table tbody tr:nth-child(3) { animation-delay: 150ms; }
+table tbody tr:nth-child(4) { animation-delay: 200ms; }
+table tbody tr:nth-child(5) { animation-delay: 250ms; }
+table tbody tr:nth-child(6) { animation-delay: 300ms; }
+table tbody tr:nth-child(7) { animation-delay: 350ms; }
+table tbody tr:nth-child(8) { animation-delay: 400ms; }
+table tbody tr:nth-child(9) { animation-delay: 450ms; }
+table tbody tr:nth-child(10) { animation-delay: 500ms; }
+
+/* 3. "Full Focus" Dark Mode Overrides */
+/* When in Dark Mode, make inputs glow and fade out distractions */
+html.dark input, 
+html.dark select, 
+html.dark textarea {
+    transition: all 0.4s var(--smooth-curve);
+    background-color: #111827 !important; /* Deep space gray */
+    border-color: #374151 !important;
+}
+
+html.dark input:focus, 
+html.dark select:focus, 
+html.dark textarea:focus {
+    /* Ambient glowing focus ring */
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3), 0 0 20px rgba(99, 102, 241, 0.15) !important;
+    border-color: #6366f1 !important;
+    transform: translateY(-1px);
+}
+
+/* 4. Buttery Hover Effects for Sidebar Links */
+nav a {
+    transition: all 0.3s var(--smooth-curve) !important;
+}
+
+nav a:hover {
+    padding-left: 0.5rem !important; /* Gently slides the text right */
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* 5. Floating Action Buttons (Save/Add) */
+.submit-row button, 
+a.addlink {
+    transition: all 0.4s var(--smooth-curve) !important;
+}
+
+.submit-row button:hover, 
+a.addlink:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4) !important;
+}

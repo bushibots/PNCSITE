@@ -1,5 +1,5 @@
 import uuid
-import random
+import secrets
 import string
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -7,13 +7,17 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
 
 # ---------------------------------------------------------
 # HELPER FUNCTIONS
 # ---------------------------------------------------------
 def generate_tracking_id():
-    """Generates a short, readable 8-character ID for customers to track requests."""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+    """Generates a secure, cryptographically random 8-character ID."""
+    alphabet = string.ascii_uppercase + string.digits
+    # secrets.choice picks a truly random character one by one
+    return ''.join(secrets.choice(alphabet) for i in range(8))
 
 def document_upload_path(instance, filename):
     """Saves files securely organized by shop and tracking ID."""
@@ -22,6 +26,12 @@ def document_upload_path(instance, filename):
     tracking_id = instance.request.tracking_id
     return f"shops/{shop_slug}/requests/{tracking_id}/{filename}"
 
+def validate_file_size(value):
+    """Blocks any file larger than 5 Megabytes (5MB)"""
+    max_size_mb = 5
+    if value.size > max_size_mb * 1024 * 1024:
+        raise ValidationError(f"File size cannot exceed {max_size_mb}MB.")
+    return value
 # ---------------------------------------------------------
 # CORE MODELS
 # ---------------------------------------------------------
@@ -106,12 +116,22 @@ class ServiceRequest(models.Model):
 class UploadedDocument(models.Model):
     request = models.ForeignKey(ServiceRequest, on_delete=models.CASCADE, related_name='documents')
     document_name = models.CharField(max_length=100) # e.g., "Aadhaar Card", "Photo"
-    file = models.FileField(upload_to=document_upload_path)
+    
+    # --- NEW: HARDENED FILE FIELD ---
+    file = models.FileField(
+        upload_to=document_upload_path,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png']),
+            validate_file_size
+        ]
+    )
+    # --------------------------------
+    
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.document_name} for {self.request.tracking_id}"
-
+    
 class Appointment(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='appointments')
     request = models.OneToOneField(ServiceRequest, on_delete=models.CASCADE, related_name='appointment')

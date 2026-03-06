@@ -60,12 +60,20 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
         ("Account Credentials", {"fields": ("username", "password")}),
         ("Personal Profile", {"fields": ("first_name", "last_name", "email", "phone_number")}),
         ("Permissions & Roles", {
-            "fields": ("is_staff", "is_shop_owner", "is_moderator", "is_superuser"), # ADDED is_moderator
+            "fields": ("is_staff", "is_shop_owner", "is_moderator", "is_superuser"), 
             "description": "Enable 'Staff' along with a role to grant dashboard access automatically."
         }),
     )
     list_display = ['username', 'email', 'is_shop_owner', 'is_moderator', 'is_staff']
     list_filter = ['is_shop_owner', 'is_moderator', 'is_staff']
+
+    # --- NEW: STOP PRIVILEGE ESCALATION ---
+    def get_readonly_fields(self, request, obj=None):
+        readonly = super().get_readonly_fields(request, obj)
+        # If the user is NOT a superuser, they cannot edit these power checkboxes!
+        if not request.user.is_superuser:
+            return list(readonly) + ['is_superuser', 'is_staff', 'is_moderator', 'is_shop_owner']
+        return readonly
 
     # --- THE UNTOUCHABLE ADMIN LOCK ---
     def has_change_permission(self, request, obj=None):
@@ -81,7 +89,6 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
 
 @admin.register(Shop)
 class ShopAdmin(ShopIsolatedAdmin):
-    # Added 'view_storefront' to the end of the list!
     list_display = ['name', 'owner', 'onboarded_by', 'is_flagged', 'phone', 'view_storefront']
     list_filter = ['is_flagged', 'onboarded_by']
     search_fields = ['name']
@@ -93,15 +100,28 @@ class ShopAdmin(ShopIsolatedAdmin):
             return ['owner', 'slug', 'onboarded_by', 'is_flagged']
         return []
 
-    # --- NEW: Clickable Storefront Link ---
     def view_storefront(self, obj):
         """Generates a clickable link to the public shop page in the admin table."""
         if obj.slug:
             url = reverse('shop_home', args=[obj.slug])
-            # Using Tailwind classes to make it look like a nice blue link!
             return format_html('<a href="{}" target="_blank" class="text-blue-600 font-bold hover:underline">View Live Shop ↗</a>', url)
         return "-"
-    view_storefront.short_description = "Public Link" # Sets the column header name
+    view_storefront.short_description = "Public Link"
+
+    # --- NEW: SINGLE SHOP UI CONSTRAINT ---
+    def has_add_permission(self, request):
+        """Hides the 'Add' button if a Shop Owner already has a shop."""
+        # Superusers and Moderators can add as many shops as they want
+        if request.user.is_superuser or getattr(request.user, 'is_moderator', False):
+            return True
+            
+        # If the user is just a regular Shop Owner...
+        if getattr(request.user, 'is_shop_owner', False):
+            # Check if they already have a shop linked to their profile
+            if hasattr(request.user, 'shop'):
+                return False # Hide the "Add Shop" button!
+                
+        return super().has_add_permission(request)
 @admin.register(Service)
 class ServiceAdmin(ShopIsolatedAdmin):
     list_display = ['name', 'shop', 'price', 'is_active']
@@ -122,8 +142,18 @@ class ServiceRequestAdmin(ShopIsolatedAdmin):
 
 @admin.register(UploadedDocument)
 class UploadedDocumentAdmin(ShopIsolatedAdmin):
-    list_display = ['document_name', 'request', 'uploaded_at']
-
+    list_display = ['document_name', 'request', 'uploaded_at', 'secure_download_button']
+    
+    def secure_download_button(self, obj):
+        """Creates a secure download button instead of exposing the raw file link."""
+        if obj.file:
+            url = reverse('secure_download', args=[obj.id])
+            return format_html(
+                '<a href="{}" target="_blank" class="text-white bg-green-600 px-3 py-1 rounded text-xs font-bold hover:bg-green-700">↓ Download Securely</a>', 
+                url
+            )
+        return "-"
+    secure_download_button.short_description = "Encrypted File"
 @admin.register(Appointment)
 class AppointmentAdmin(ShopIsolatedAdmin):
     list_display = ['date', 'time_slot', 'customer_name', 'shop']

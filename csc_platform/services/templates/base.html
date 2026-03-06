@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ shop.name }}{% endblock %}</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 1. Global Setup */
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc; /* Ultra-soft slate background */
+            overflow-x: hidden;
+        }
+
+        /* 2. Custom Smooth Math (The secret to flagship animations) */
+        :root {
+            --smooth-curve: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 3. The Entrance Animations */
+        @keyframes subtleFadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes ambientBreathe {
+            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.4; }
+            50% { transform: scale(1.05) translate(10px, -10px); opacity: 0.6; }
+        }
+
+        .animate-fade-up {
+            opacity: 0; /* Start hidden */
+            animation: subtleFadeUp 1.2s var(--smooth-curve) forwards;
+        }
+
+        /* 4. Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-900">
+    
+    <div class="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-200/40 mix-blend-multiply filter blur-[80px]" style="animation: ambientBreathe 10s ease-in-out infinite;"></div>
+        <div class="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-blue-200/40 mix-blend-multiply filter blur-[100px]" style="animation: ambientBreathe 12s ease-in-out infinite reverse;"></div>
+    </div>
+
+    {% block content %}{% endblock %}
+</body>
+</html>
